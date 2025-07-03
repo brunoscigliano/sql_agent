@@ -1,25 +1,28 @@
 import json
 import sqlite3
 import pandas as pd
+import chromadb
 from openai import OpenAI
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from Source.SystemMessages import get_sql_checker_system_message
 
 class AgentTools:
     """SQL Agent Tools that encapsulate database operations and AI-powered validation"""
     
-    def __init__(self, client: OpenAI, db_path: str, model: str = "gpt-4o-mini"):
+    def __init__(self, client: OpenAI, db_path: str, vector_store: chromadb.Collection, model: str = "gpt-4o-mini"):
         """
         Initialize AgentTools with OpenAI client and configuration
         
         Args:
             client (OpenAI): OpenAI client instance
             db_path (str): Path to SQLite database
+            collection (chromadb.Collection, optional): ChromaDB collection for similarity search
             model (str): GPT model to use (default: "gpt-4o-mini")
         """
         self.client = client
         self.model = model
         self.db_path = db_path
+        self.vector_store = vector_store
     
     def query_sql_database(self, query: str) -> str:
         """
@@ -208,6 +211,34 @@ class AgentTools:
             }
             return json.dumps(error_msg, indent=2)
     
+    def search_proper_nouns(self,noun: str) -> str:
+        """
+        Use to look up values to filter on. Input is an approximate spelling 
+        of the proper noun, output is valid proper nouns. Use the noun most 
+        similar to the search.    
+        Args:
+            noun (str): The noun to check
+            
+        Returns:
+            str: JSON string containing list of matching 5 nouns to choose from
+        """ 
+        try:
+            result = self.vector_store.query(
+                query_texts=[noun],
+                n_results=5
+            )
+            matches = result['documents'][0] if result['documents'] else []
+            return json.dumps({
+                "message": f"Found {len(matches)} similar proper nouns",
+                "matches": matches,
+                "search_term": noun
+            }, indent=2)
+        except Exception as e:
+            return json.dumps({
+                "error": str(e),
+                "message": "Failed to search proper nouns"
+            }, indent=2)
+
     def get_available_functions(self) -> Dict[str, Any]:
         """
         Get dictionary of available functions for tool execution
@@ -220,6 +251,7 @@ class AgentTools:
             "info_sql_database": self.info_sql_database,
             "list_sql_database": self.list_sql_database,
             "query_sql_checker": self.query_sql_checker,
+            "search_proper_nouns": self.search_proper_nouns
         }
     
     @staticmethod
@@ -291,6 +323,23 @@ class AgentTools:
                             }
                         },
                         "required": ["query"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "search_proper_nouns",
+                    "description": "Search for proper nouns in the database.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "noun": {
+                                "type": "string",
+                                "description": "The noun to search for"
+                            }
+                        },
+                        "required": ["noun"]
                     }
                 }
             }
