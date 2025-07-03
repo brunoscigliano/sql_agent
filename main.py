@@ -4,14 +4,14 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from Source.SQLAgent import SQLAgentWithTools
 from Source.AgentTools import AgentTools
+from Source.ChromaClient import ChromaCollectionFactory
 
-# Load environment variables
 load_dotenv()
 
 if __name__ == "__main__":
     client = OpenAI()
-
-    tools = AgentTools(client, db_path="chinook.db")
+    vector_store = ChromaCollectionFactory.create_collection(db_path="chinook.db")
+    tools = AgentTools(client, db_path="chinook.db", vector_store=vector_store)
 
     sql_agent = SQLAgentWithTools(client, tools, debug_mode=True)
 
