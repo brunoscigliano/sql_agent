@@ -3,7 +3,7 @@ import sqlite3
 import pandas as pd
 from openai import OpenAI
 from typing import Dict, Any, List
-from SystemMessages import get_sql_checker_system_message
+from Source.SystemMessages import get_sql_checker_system_message
 
 class AgentTools:
     """SQL Agent Tools that encapsulate database operations and AI-powered validation"""

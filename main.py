@@ -1,11 +1,9 @@
 # main.py
 # Main entry point for the SQL agent application
-import os
-import sqlite3
 from dotenv import load_dotenv
 from openai import OpenAI
-from SQLAgent import SQLAgentWithTools
-from AgentTools import AgentTools
+from Source.SQLAgent import SQLAgentWithTools
+from Source.AgentTools import AgentTools
 
 # Load environment variables
 load_dotenv()
@@ -13,7 +11,7 @@ load_dotenv()
 if __name__ == "__main__":
     client = OpenAI()
 
-    tools = AgentTools(client, db_path="../chinook.db")
+    tools = AgentTools(client, db_path="chinook.db")
 
     sql_agent = SQLAgentWithTools(client, tools, debug_mode=True)
 

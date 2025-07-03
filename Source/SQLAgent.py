@@ -1,5 +1,5 @@
 import json
-from SystemMessages import get_sql_agent_system_message
+from Source.SystemMessages import get_sql_agent_system_message
 
 class SQLAgentWithTools:
     """SQL Agent that uses OpenAI function calling with SQL tools"""
